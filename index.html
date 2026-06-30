@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cashey — Community Marketplace Game</title>
+<style>
+  :root {
+    --bg:#f0f2f7;--surface:#fff;--border:#e2e6ef;--text:#1a1d27;--muted:#6b7280;
+    --accent:#6366f1;--accent-l:#eef2ff;
+    --green:#22c55e;--green-l:#f0fdf4;--green-b:#86efac;
+    --red:#ef4444;--red-l:#fef2f2;--red-b:#fca5a5;
+    --blue:#3b82f6;--blue-l:#eff6ff;--blue-b:#93c5fd;
+    --purple:#a855f7;--purple-l:#faf5ff;--purple-b:#d8b4fe;
+    --yellow:#eab308;--yellow-l:#fefce8;--yellow-b:#fde68a;
+    --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.04);
+    --shadow-lg:0 8px 32px rgba(0,0,0,.14);
+    --r:10px;--r-sm:7px;
+    --board-bg:#1b4332;
+    --board-frame:#0a2818;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+
+  /* ── TOP BAR ── */
+  #topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;height:48px;display:flex;align-items:center;gap:12px;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+  #topbar h1{font-size:18px;font-weight:900;color:var(--accent);letter-spacing:-.5px;}
+  #topbar .sub{font-size:11px;color:var(--muted);}
+  .spacer{flex:1;}
+  #turn-chip{display:flex;align-items:center;gap:7px;background:var(--accent-l);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;color:var(--accent);}
+  #turn-dot{width:11px;height:11px;border-radius:50%;}
+  .tbtn{padding:6px 12px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface);font-size:11px;font-weight:600;cursor:pointer;color:var(--text);transition:all .15s;white-space:nowrap;}
+  .tbtn:hover{background:var(--accent-l);color:var(--accent);border-color:var(--accent);}
+
+  /* ── LAYOUT ── */
+  #main{display:flex;flex:1;overflow:hidden;}
+
+  /* ── LEFT: PLAYERS ── */
+  #left{width:260px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+  #left-hdr{padding:10px 12px 8px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);flex-shrink:0;}
+  #players-list{flex:1;overflow-y:auto;padding:8px;}
+
+  .pcard{border:1.5px solid var(--border);border-radius:var(--r-sm);margin-bottom:8px;overflow:hidden;transition:border-color .15s,box-shadow .15s;}
+  .pcard.active-p{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-l);}
+  .pcard-head{display:flex;align-items:center;gap:7px;padding:8px 10px;background:var(--bg);}
+  .pdot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+  .pname{font-size:12px;font-weight:700;flex:1;}
+  .bm-badge{font-size:9px;padding:2px 6px;border-radius:20px;background:var(--yellow-l);border:1px solid var(--yellow-b);color:#854d0e;font-weight:700;}
+  .pcard-body{padding:8px 10px;}
+  .stat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+  .stat-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);}
+  .stat-val{font-size:12px;font-weight:800;}
+  .stat-val.green{color:#15803d;}
+  .stat-val.red{color:var(--red);}
+  .stat-val.accent{color:var(--accent);}
+  .mini-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin:6px 0 3px;}
+  .tag-row{display:flex;flex-wrap:wrap;gap:3px;}
+  .tag{font-size:9px;padding:2px 6px;border-radius:20px;font-weight:600;}
+  .tag.good{background:var(--blue-l);border:1px solid var(--blue-b);color:#1d4ed8;}
+  .tag.svc{background:var(--purple-l);border:1px solid var(--purple-b);color:#7e22ce;}
+  .tag.met{background:var(--green-l);border:1px solid var(--green-b);color:#15803d;}
+  .tag.empty{background:var(--bg);border:1px solid var(--border);color:var(--muted);}
+  .cash-row{display:flex;align-items:center;gap:4px;margin-top:7px;}
+  .cash-input{width:60px;border:1px solid var(--border);border-radius:5px;padding:3px 5px;font-size:11px;font-weight:700;text-align:right;}
+  .mini-btn{font-size:10px;padding:3px 6px;border-radius:5px;border:none;cursor:pointer;font-weight:700;}
+  .mini-btn.g{background:var(--green-l);color:#15803d;}
+  .mini-btn.r{background:var(--red-l);color:#b91c1c;}
+  .mini-btn.b{background:var(--accent-l);color:var(--accent);}
+
+  /* ── BOARD ── */
+  #board-area{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#243040;}
+  #board-wrap{flex:1;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:16px;}
+
+  #game-board{
+    background:var(--board-bg);
+    border:6px solid var(--board-frame);
+    border-radius:16px;
+    padding:12px;
+    box-shadow:0 0 0 2px #2d6a4f, 0 20px 60px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08);
+    position:relative;
+    min-width:fit-content;
+  }
+
+  #board-title{
+    text-align:center;
+    color:#a7f3d0;
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    margin-bottom:10px;
+    opacity:.7;
+  }
+
+  #spaces-grid{
+    display:grid;
+    gap:5px;
+  }
+
+  /* ─ Board Space ─ */
+  .space{
+    width:130px;
+    min-height:110px;
+    border-radius:8px;
+    padding:7px 8px;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    transition:transform .12s, box-shadow .12s;
+    border:2px solid transparent;
+  }
+  .space.space-good{
+    background:#dbeafe;
+    border-color:#93c5fd;
+  }
+  .space.space-svc{
+    background:#f3e8ff;
+    border-color:#d8b4fe;
+  }
+  .space.space-sold{
+    background:#e5e7eb;
+    border-color:#d1d5db;
+    opacity:.55;
+    cursor:default;
+  }
+  .space.space-own{
+    background:#fef9c3;
+    border-color:#fde68a;
+    cursor:default;
+  }
+  .space.space-active{
+    border-color:var(--accent)!important;
+    box-shadow:0 0 0 3px rgba(99,102,241,.4), 0 4px 16px rgba(0,0,0,.3)!important;
+  }
+  .space-num{
+    position:absolute;
+    top:5px;left:6px;
+    font-size:9px;font-weight:900;
+    color:rgba(0,0,0,.25);
+  }
+  .space-type-badge{
+    position:absolute;
+    top:5px;right:5px;
+    font-size:7px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;
+    padding:1px 5px;border-radius:20px;
+  }
+  .space-type-badge.g{background:#bfdbfe;color:#1d4ed8;}
+  .space-type-badge.s{background:#e9d5ff;color:#7e22ce;}
+  .space-icon{font-size:22px;margin-top:12px;margin-bottom:1px;}
+  .space-name{font-size:11px;font-weight:800;line-height:1.2;color:#111;}
+  .space-owner-row{display:flex;align-items:center;gap:3px;margin-top:2px;}
+  .space-owner-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .space-owner-name{font-size:9px;color:#555;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .space-price{font-size:14px;font-weight:900;color:#6366f1;margin-top:auto;padding-top:4px;}
+  .space-tokens{display:flex;gap:2px;flex-wrap:wrap;margin-top:3px;}
+  .space-token{
+    width:18px;height:18px;border-radius:50%;
+    border:2px solid white;
+    box-shadow:0 1px 4px rgba(0,0,0,.4);
+    display:flex;align-items:center;justify-content:center;
+    font-size:8px;font-weight:900;color:white;
+    flex-shrink:0;
+  }
+  .space-sold-label{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    border-radius:7px;overflow:hidden;pointer-events:none;
+  }
+  .space-sold-label::before{
+    content:'';position:absolute;inset:0;background:rgba(255,255,255,.6);
+  }
+  .space-sold-stamp{
+    position:relative;z-index:1;
+    background:#ef4444;color:white;
+    font-size:11px;font-weight:900;letter-spacing:2px;
+    padding:4px 12px;border-radius:3px;
+    transform:rotate(-18deg);
+    box-shadow:0 2px 8px rgba(239,68,68,.5);
+    border:2px solid rgba(255,255,255,.8);
+    text-shadow:0 1px 2px rgba(0,0,0,.3);
+  }
+  /* corner/path arrows */
+  .path-arrow{
+    display:flex;align-items:center;justify-content:center;
+    color:rgba(255,255,255,.25);font-size:18px;
+    grid-column:span 1;
+    user-select:none;
+  }
+
+  /* START space */
+  .space-start{
+    background:linear-gradient(135deg,#052e16,#14532d)!important;
+    border-color:#16a34a!important;
+    cursor:default;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .space-start-inner{text-align:center;}
+  .space-start-inner .big{font-size:28px;display:block;}
+  .space-start-inner .lbl{font-size:11px;font-weight:900;color:#86efac;letter-spacing:1px;}
+
+  /* ── RIGHT ── */
+  #right{width:220px;flex-shrink:0;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+  #right-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;}
+  .rtab{flex:1;padding:9px 2px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;text-transform:uppercase;}
+  .rtab.active{color:var(--accent);border-bottom-color:var(--accent);}
+  #right-content{flex:1;overflow-y:auto;padding:10px;}
+  #dice-wrap{padding:12px;border-top:1px solid var(--border);flex-shrink:0;}
+  #dice-btn{width:100%;padding:12px;border-radius:var(--r-sm);border:none;background:var(--accent);color:white;font-size:14px;font-weight:800;cursor:pointer;transition:all .15s;}
+  #dice-btn:hover{background:#4f46e5;}
+  #dice-btn:disabled{opacity:.45;cursor:not-allowed;}
+  #dice-result{text-align:center;font-size:30px;font-weight:900;color:var(--accent);min-height:40px;line-height:40px;margin-top:6px;}
+  .mv-row{display:flex;gap:3px;margin-top:8px;}
+  .mv-btn{flex:1;padding:5px 0;border-radius:5px;border:1px solid var(--border);background:var(--bg);font-size:11px;font-weight:700;cursor:pointer;text-align:center;transition:all .15s;}
+  .mv-btn:hover{background:var(--accent-l);color:var(--accent);border-color:var(--accent);}
+
+  /* Bank */
+  .bank-row{display:flex;align-items:center;gap:5px;padding:6px 0;border-bottom:1px solid var(--border);font-size:11px;}
+  .bank-row:last-child{border:none;}
+  .bank-name{flex:1;font-weight:600;font-size:11px;}
+  .bank-credit{font-weight:800;color:var(--accent);min-width:40px;text-align:right;font-size:11px;}
+  .bank-owed{font-weight:700;color:var(--red);min-width:36px;text-align:right;font-size:11px;}
+  .bank-adjust{font-size:10px;padding:2px 6px;border-radius:5px;border:1px solid var(--border);background:var(--bg);cursor:pointer;font-weight:700;}
+  .bank-adjust:hover{background:var(--accent-l);color:var(--accent);}
+
+  /* Log */
+  .tx-item{font-size:11px;padding:7px 9px;background:var(--bg);border-radius:6px;margin-bottom:5px;border-left:3px solid var(--accent);line-height:1.4;}
+  .tx-time{color:var(--muted);font-size:9px;margin-top:2px;}
+
+  /* ── MODALS ── */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;pointer-events:none;transition:opacity .2s;}
+  .overlay.open{opacity:1;pointer-events:all;}
+  .modal{background:var(--surface);border-radius:var(--r);padding:24px;width:420px;max-width:94vw;box-shadow:var(--shadow-lg);transform:scale(.95);transition:transform .2s;}
+  .overlay.open .modal{transform:scale(1);}
+  .modal h2{font-size:17px;font-weight:800;margin-bottom:4px;}
+  .msub{font-size:12px;color:var(--muted);margin-bottom:16px;}
+  .mactions{display:flex;gap:8px;margin-top:18px;justify-content:flex-end;}
+  .btn{padding:8px 18px;border-radius:var(--r-sm);border:none;cursor:pointer;font-size:12px;font-weight:700;transition:all .15s;}
+  .btn:hover{opacity:.85;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-p{background:var(--accent);color:white;}
+  .btn-s{background:var(--bg);color:var(--text);border:1px solid var(--border);}
+  .btn-sm{padding:6px 12px;font-size:11px;}
+  .btn-full{width:100%;}
+
+  .purchase-item-display{border-radius:var(--r-sm);padding:16px;margin:12px 0;background:var(--accent-l);border:1.5px solid #c7d2fe;display:flex;gap:12px;align-items:center;}
+  .purchase-icon{font-size:36px;}
+  .purchase-info{flex:1;}
+  .purchase-name{font-size:16px;font-weight:900;}
+  .purchase-owner{font-size:11px;color:var(--muted);margin-top:2px;}
+  .purchase-price{font-size:22px;font-weight:900;color:var(--accent);margin-top:4px;}
+  .balance-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;}
+  .balance-box{background:var(--bg);border-radius:6px;padding:10px;text-align:center;}
+  .balance-box .lbl{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);}
+  .balance-box .val{font-size:15px;font-weight:900;margin-top:2px;}
+  .cant-afford{background:var(--red-l);border:1px solid var(--red-b);border-radius:6px;padding:8px 12px;font-size:11px;font-weight:700;color:var(--red);margin-top:8px;}
+
+  /* ── SETUP ── */
+  #setup-screen{position:fixed;inset:0;background:linear-gradient(135deg,#052e16,#1a3a2a);display:flex;justify-content:center;z-index:900;overflow-y:auto;padding:20px;}
+  #setup-card{background:white;border-radius:16px;padding:32px;width:700px;max-width:100%;box-shadow:var(--shadow-lg);margin:auto;}
+  #setup-card h2{font-size:24px;font-weight:900;color:var(--accent);margin-bottom:4px;}
+  .setup-sub{font-size:13px;color:var(--muted);margin-bottom:24px;}
+  .setup-step-hdr{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+  #plist-setup{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+  .psetup-row{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:var(--r-sm);padding:8px 12px;}
+  .psetup-row input[type=text]{flex:1;border:1px solid var(--border);border-radius:5px;padding:6px 9px;font-size:12px;}
+  .bm-check{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--muted);white-space:nowrap;}
+  .setup-btns{display:flex;gap:8px;margin-bottom:20px;}
+  #item-list-setup{display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;margin-bottom:12px;}
+  .item-setup-row{display:flex;align-items:center;gap:7px;background:var(--bg);border-radius:var(--r-sm);padding:7px 10px;}
+  .item-setup-row input[type=text]{width:120px;border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:12px;}
+  .item-setup-row input[type=number]{width:70px;border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:12px;}
+  .item-setup-row select{border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:12px;background:white;}
+  .type-toggle{display:flex;border-radius:5px;overflow:hidden;border:1px solid var(--border);}
+  .type-toggle button{padding:4px 8px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:white;color:var(--muted);transition:all .1s;}
+  .type-toggle button.active-good{background:var(--blue-l);color:#1d4ed8;}
+  .type-toggle button.active-svc{background:var(--purple-l);color:#7e22ce;}
+  .rm-btn{width:22px;height:22px;border-radius:50%;border:none;background:var(--red-l);color:var(--red);font-size:14px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .item-add-btns{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+
+  .sec-hdr{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin:12px 0 6px;padding-bottom:3px;border-bottom:1px solid var(--border);}
+  .sec-hdr:first-child{margin-top:0;}
+  ::-webkit-scrollbar{width:4px;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px;}
+
+  @keyframes roll{0%,100%{transform:rotate(0)}30%{transform:rotate(20deg)}70%{transform:rotate(-20deg)}}
+  @keyframes pop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+  .rolling{animation:roll .35s ease-in-out;}
+  .popped{animation:pop .2s ease-out;}
+  @keyframes land{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+  .landing{animation:land .35s ease-in-out;}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ SETUP ══════════════ -->
+<div id="setup-screen">
+  <div id="setup-card">
+    <h2>💰 Cashey</h2>
+    <p class="setup-sub">Community Marketplace Board Game · Facilitator Setup</p>
+
+    <div class="setup-step-hdr">Step 1 — Players</div>
+    <div id="plist-setup"></div>
+    <div class="setup-btns">
+      <button type="button" class="btn btn-s btn-sm" onclick="addPlayer()">+ Add Player</button>
+      <button type="button" class="btn btn-s btn-sm" onclick="removePlayer()">− Remove</button>
+    </div>
+
+    <div class="setup-step-hdr">Step 2 — Marketplace Items (these become board spaces)</div>
+    <div class="item-add-btns">
+      <button type="button" class="btn btn-s btn-sm" onclick="addItemRow('good')">+ Add Good</button>
+      <button type="button" class="btn btn-s btn-sm" onclick="addItemRow('service')">+ Add Service</button>
+      <button type="button" class="btn btn-s btn-sm" onclick="loadPresetItems()">⚡ Load Preset Items</button>
+    </div>
+    <div id="item-list-setup"></div>
+    <button type="button" class="btn btn-p btn-full" style="padding:13px;font-size:14px;" onclick="startGame()">Start Game →</button>
+  </div>
+</div>
+
+<!-- ══════════════ TOP BAR ══════════════ -->
+<div id="topbar">
+  <h1>💰 Cashey</h1>
+  <span class="sub">Community Marketplace</span>
+  <div class="spacer"></div>
+  <div id="turn-chip"><div id="turn-dot"></div><span id="turn-name">—</span>'s turn</div>
+  <div id="debt-chip" style="display:flex;align-items:center;gap:6px;background:var(--red-l);border:1px solid var(--red-b);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;color:var(--red);">🏦 Total Owed: <span id="debt-total">$0</span></div>
+  <button class="tbtn" onclick="showLeaderboard()">📊 Scores</button>
+  <button class="tbtn" style="color:var(--muted)" onclick="resetGame()">↺ Reset</button>
+</div>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<div id="main">
+  <div id="left">
+    <div id="left-hdr">Players</div>
+    <div id="players-list"></div>
+  </div>
+
+  <!-- BOARD -->
+  <div id="board-area">
+    <div id="board-wrap">
+      <div id="game-board">
+        <div id="board-title">💰 Cashey Marketplace Board</div>
+        <div id="spaces-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div id="right">
+    <div id="right-tabs">
+      <div class="rtab active" onclick="switchTab(this,'dice')">Dice</div>
+      <div class="rtab" onclick="switchTab(this,'bank')">Bank</div>
+      <div class="rtab" onclick="switchTab(this,'log')">Log</div>
+    </div>
+    <div id="right-content"></div>
+    <div id="dice-wrap">
+      <button id="dice-btn" onclick="rollDice()">🎲 Roll Dice</button>
+      <div id="dice-result"></div>
+      <div class="mv-row" id="mv-row"></div>
+      <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:4px;">Manual move (facilitator)</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODALS ══════════════ -->
+<div class="overlay" id="purchase-modal">
+  <div class="modal">
+    <h2 id="pm-title">Item</h2>
+    <p class="msub" id="pm-sub"></p>
+    <div id="pm-body"></div>
+    <div class="mactions">
+      <button class="btn btn-s" onclick="doPass()">Pass</button>
+      <button class="btn btn-p" id="pm-buy-btn" onclick="doBuy()">Buy</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="credit-modal">
+  <div class="modal" style="width:360px;">
+    <h2>Adjust Credit Line</h2>
+    <p class="msub" id="cm-sub"></p>
+    <div style="margin:12px 0;">
+      <label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:5px;">New Credit Limit</label>
+      <input id="cm-input" type="number" min="0" step="100" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:9px 12px;font-size:16px;font-weight:800;"/>
+    </div>
+    <div class="mactions">
+      <button class="btn btn-s" onclick="closeM('credit-modal')">Cancel</button>
+      <button class="btn btn-p" onclick="applyCredit()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="lb-modal">
+  <div class="modal" style="width:480px;">
+    <h2>📊 Scoreboard</h2>
+    <p class="msub">Net worth = wallet − amountOwed + inventory value</p>
+    <div id="lb-body"></div>
+    <div class="mactions"><button class="btn btn-s" onclick="closeM('lb-modal')">Close</button></div>
+  </div>
+</div>
+
+<script>
+// ── CONSTANTS ─────────────────────────────────────────────
+const COLORS  = ['#6366f1','#ec4899','#f97316','#22c55e','#3b82f6','#a855f7','#eab308','#14b8a6'];
+const TOKENS  = ['A','B','C','D','E','F','G','H'];
+const COLS    = 5; // board columns
+
+const PRESET_ITEMS = [
+  // Goods
+  {name:'Couch',           type:'good',    icon:'🛋️', price:150},
+  {name:'Desk',            type:'good',    icon:'🪑', price:80},
+  {name:'Mini Fridge',     type:'good',    icon:'🧊', price:120},
+  {name:'Textbooks',       type:'good',    icon:'📚', price:60},
+  {name:'TV',              type:'good',    icon:'📺', price:300},
+  {name:'Formal Dress',    type:'good',    icon:'👗', price:90},
+  {name:'Decorations',     type:'good',    icon:'🎀', price:40},
+  {name:'Lamp',            type:'good',    icon:'💡', price:25},
+  {name:'Kitchen Set',     type:'good',    icon:'🍳', price:200},
+  {name:'Bike',            type:'good',    icon:'🚲', price:180},
+  {name:'Microwave',       type:'good',    icon:'📦', price:70},
+  {name:'Bookshelf',       type:'good',    icon:'📐', price:55},
+  {name:'Coffee Maker',    type:'good',    icon:'☕', price:45},
+  {name:'Headphones',      type:'good',    icon:'🎧', price:85},
+  {name:'Printer',         type:'good',    icon:'🖨️', price:110},
+  {name:'Backpack',        type:'good',    icon:'🎒', price:50},
+  {name:'Calculator',      type:'good',    icon:'🧮', price:30},
+  {name:'Yoga Mat',        type:'good',    icon:'🧘', price:35},
+  {name:'Air Purifier',    type:'good',    icon:'💨', price:130},
+  {name:'Mirror',          type:'good',    icon:'🪞', price:65},
+  // Services
+  {name:'Tutoring',        type:'service', icon:'📖', price:50},
+  {name:'Photography',     type:'service', icon:'📸', price:100},
+  {name:'Resume Review',   type:'service', icon:'📄', price:75},
+  {name:'Hair & Makeup',   type:'service', icon:'💄', price:60},
+  {name:'Moving Help',     type:'service', icon:'🚛', price:80},
+  {name:'Graphic Design',  type:'service', icon:'🎨', price:90},
+  {name:'Event Planning',  type:'service', icon:'🎉', price:150},
+  {name:'Babysitting',     type:'service', icon:'👶', price:40},
+  {name:'Airport Ride',    type:'service', icon:'🚗', price:65},
+  {name:'Budgeting Help',  type:'service', icon:'💰', price:85},
+  {name:'Cooking Lessons', type:'service', icon:'👨‍🍳', price:55},
+  {name:'Fitness Training',type:'service', icon:'💪', price:70},
+  {name:'Tech Support',    type:'service', icon:'💻', price:60},
+  {name:'Note Sharing',    type:'service', icon:'📝', price:30},
+  {name:'Language Help',   type:'service', icon:'🌐', price:45},
+  {name:'Pet Sitting',     type:'service', icon:'🐾', price:40},
+];
+
+// ── STATE ─────────────────────────────────────────────────
+let players       = [];
+let items         = [];
+let currentPlayer = 0;
+let txLog         = [];
+let pendingItem   = null;
+let currentTab    = 'dice';
+let creditAdjTarget = null;
+let setupCount    = 4;
+let setupItemRows = [];
+let itemRowId     = 0;
+
+// ── HELPERS ───────────────────────────────────────────────
+function availableToSpend(p){ return p.wallet + (p.creditLine - p.amountOwed); }
+
+function availableItems(){
+  return items.filter(i => i.type==='service' || !i.sold);
+}
+
+// Snake-board: given a sequential index, return {row,col}
+function snakePos(idx){
+  const row = Math.floor(idx / COLS);
+  const colInRow = idx % COLS;
+  const col = (row % 2 === 0) ? colInRow : (COLS - 1 - colInRow);
+  return {row, col};
+}
+
+// ── SETUP ─────────────────────────────────────────────────
+function initSetup(){
+  setupCount = 4; setupItemRows = [];
+  renderSetupPlayers();
+  document.getElementById('item-list-setup').innerHTML = '';
+}
+
+function renderSetupPlayers(){
+  const el = document.getElementById('plist-setup');
+  el.innerHTML = '';
+  for(let i=0;i<setupCount;i++){
+    el.innerHTML += `
+      <div class="psetup-row">
+        <div style="width:14px;height:14px;border-radius:50%;background:${COLORS[i]};flex-shrink:0;"></div>
+        <input type="text" id="pn-${i}" value="Player ${i+1}" placeholder="Name" oninput="syncOwnerDropdowns()"/>
+      </div>`;
+  }
+  syncOwnerDropdowns();
+}
+
+function addPlayer(){ if(setupCount<8){setupCount++;renderSetupPlayers();} }
+function removePlayer(){ if(setupCount>2){setupCount--;renderSetupPlayers();} }
+
+function syncOwnerDropdowns(){
+  const names = [];
+  for(let i=0;i<setupCount;i++) names.push(document.getElementById(`pn-${i}`)?.value || `Player ${i+1}`);
+  document.querySelectorAll('.owner-select').forEach(sel=>{
+    const cur = sel.value;
+    sel.innerHTML = names.map((n,i)=>`<option value="${i}" ${parseInt(cur)===i?'selected':''}>${n}</option>`).join('');
+  });
+}
+
+function addItemRow(type='good', defaults={}){
+  const id = itemRowId++;
+  const row = {id, name:defaults.name||'', type, price:defaults.price||50, ownerId:defaults.ownerId||0};
+  setupItemRows.push(row);
+  const names = [];
+  for(let i=0;i<setupCount;i++) names.push(document.getElementById(`pn-${i}`)?.value || `Player ${i+1}`);
+  const ownerOpts = names.map((n,i)=>`<option value="${i}" ${i===row.ownerId?'selected':''}>${n}</option>`).join('');
+  const el = document.getElementById('item-list-setup');
+  const div = document.createElement('div');
+  div.className = 'item-setup-row'; div.id = `irow-${id}`;
+  div.innerHTML = `
+    <div class="type-toggle">
+      <button type="button" onclick="toggleRowType(${id},'good')" class="${type==='good'?'active-good':''}">Good</button>
+      <button type="button" onclick="toggleRowType(${id},'service')" class="${type==='service'?'active-svc':''}">Service</button>
+    </div>
+    <input type="text" placeholder="Item name" value="${row.name}" oninput="updateRow(${id},'name',this.value)" style="flex:1;"/>
+    <input type="number" placeholder="$price" value="${row.price}" min="1" oninput="updateRow(${id},'price',+this.value)"/>
+    <select class="owner-select" onchange="updateRow(${id},'ownerId',+this.value)">${ownerOpts}</select>
+    <button type="button" class="rm-btn" onclick="removeItemRow(${id})">×</button>`;
+  el.appendChild(div);
+}
+
+function toggleRowType(id, type){
+  const row = setupItemRows.find(r=>r.id===id); if(row) row.type = type;
+  const div = document.getElementById(`irow-${id}`);
+  div.querySelectorAll('.type-toggle button').forEach((b,i)=>{
+    b.className = i===0?(type==='good'?'active-good':''):(type==='service'?'active-svc':'');
+  });
+}
+function updateRow(id,key,val){ const r=setupItemRows.find(r=>r.id===id); if(r) r[key]=val; }
+function removeItemRow(id){ setupItemRows=setupItemRows.filter(r=>r.id!==id); document.getElementById(`irow-${id}`)?.remove(); }
+
+function loadPresetItems(){
+  PRESET_ITEMS.forEach((item,idx)=>addItemRow(item.type,{name:item.name,price:item.price,ownerId:idx%setupCount}));
+}
+
+function startGame(){
+  if(setupItemRows.length===0){alert('Add at least one item.');return;}
+  players = [];
+  for(let i=0;i<setupCount;i++){
+    const name = document.getElementById(`pn-${i}`)?.value.trim()||`Player ${i+1}`;
+    players.push({id:i,name,color:COLORS[i],token:TOKENS[i],wallet:0,amountOwed:0,creditLine:1000,inventory:[],needsMet:[],needsMetScore:0,isBankManager:false,position:0});
+  }
+  items = setupItemRows.map((r,idx)=>{
+    const preset = PRESET_ITEMS.find(p=>p.name===r.name);
+    return {id:idx,name:r.name,type:r.type,icon:preset?.icon||(r.type==='good'?'📦':'⚡'),price:Math.max(1,r.price||50),ownerId:r.ownerId,sold:false};
+  });
+  items.forEach(item=>{ const o=players.find(p=>p.id===item.ownerId); if(o) o.inventory.push(item.id); });
+
+  document.getElementById('setup-screen').style.display='none';
+  renderBoard();
+  renderPlayers();
+  renderRightContent();
+  buildMvRow();
+  updateTurnBar();
+}
+
+// ── BOARD RENDERING ───────────────────────────────────────
+function renderBoard(){
+  const grid = document.getElementById('spaces-grid');
+  const ai   = availableItems();
+  const total = ai.length + 1; // +1 for START
+  const rows  = Math.ceil(total / COLS);
+
+  // build a 2D map: grid[row][col] = space data
+  const cellMap = {};
+  for(let r=0;r<rows;r++) for(let c=0;c<COLS;c++) cellMap[`${r},${c}`] = null;
+
+  // START at position 0 (top-left of snake = row 0 col 0... but snake starts at bottom)
+  // Convention: board reads bottom-to-top, left-to-right on even rows from bottom
+  // Simpler: position 0 = START (top-left), items fill sequentially in snake order
+  // Place START at index 0
+  const pos0 = snakePos(0);
+  cellMap[`${pos0.row},${pos0.col}`] = {type:'start'};
+
+  // Place items at index 1..N
+  ai.forEach((item, idx) => {
+    const {row, col} = snakePos(idx + 1);
+    cellMap[`${row},${col}`] = {type:'item', item};
+  });
+
+  grid.style.gridTemplateColumns = `repeat(${COLS}, 130px)`;
+  grid.style.gridTemplateRows    = `repeat(${rows}, auto)`;
+  grid.innerHTML = '';
+
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<COLS;c++){
+      const cell = cellMap[`${r},${c}`];
+      const div  = document.createElement('div');
+      if(!cell){
+        div.style.cssText='width:130px;min-height:110px;';
+        grid.appendChild(div);
+        continue;
+      }
+      if(cell.type==='start'){
+        div.className='space space-start';
+        div.innerHTML=`<div class="space-start-inner"><span class="big">🏁</span><span class="lbl">START</span></div>`;
+        grid.appendChild(div);
+        continue;
+      }
+      const {item} = cell;
+      const owner   = players.find(p=>p.id===item.ownerId);
+      const cp      = players[currentPlayer];
+      const cpPos   = cp.position; // index into ai
+      const isActive= ai[cpPos % ai.length]?.id === item.id;
+      const isOwn   = item.ownerId === cp.id;
+      const isSold  = item.sold;
+
+      // tokens on this space
+      const tokensHere = players.filter(p=>{
+        const pos = p.position % ai.length;
+        return ai[pos]?.id === item.id;
+      });
+
+      let cls = 'space';
+      if(isSold)       cls += ' space-sold';
+      else if(isOwn)   cls += ' space-own';
+      else             cls += item.type==='good' ? ' space-good' : ' space-svc';
+      if(isActive)     cls += ' space-active';
+
+      div.className = cls;
+      div.id = `space-${item.id}`;
+
+      div.innerHTML = `
+        <div class="space-num">#${ai.indexOf(item)+1}</div>
+        <div class="space-type-badge ${item.type==='good'?'g':'s'}">${item.type==='good'?'GOOD':'SVC'}</div>
+        <div class="space-icon">${item.icon}</div>
+        <div class="space-name">${item.name}</div>
+        <div class="space-owner-row">
+          <div class="space-owner-dot" style="background:${owner?.color||'#ccc'}"></div>
+          <span class="space-owner-name">${owner?.name||'?'}</span>
+        </div>
+        <div class="space-price">$${item.price}</div>
+        ${tokensHere.length?`<div class="space-tokens">${tokensHere.map(p=>`<div class="space-token" style="background:${p.color}">${p.token}</div>`).join('')}</div>`:''}
+        ${isSold?'<div class="space-sold-label"><div class="space-sold-stamp">SOLD</div></div>':''}
+        ${isOwn&&!isSold?'<div style="position:absolute;bottom:5px;right:5px;font-size:7px;font-weight:800;color:#854d0e;background:#fef9c3;padding:1px 4px;border-radius:3px;">YOURS</div>':''}
+      `;
+      grid.appendChild(div);
+    }
+  }
+
+  // Add row direction arrows between rows (on the sides)
+  // Actually just draw subtle arrows inside the board title area
+  document.getElementById('board-title').textContent = `💰 Cashey Board · ${ai.length} spaces · ${items.filter(i=>i.sold).length} sold`;
+}
+
+// ── DICE ─────────────────────────────────────────────────
+function rollDice(){
+  const btn = document.getElementById('dice-btn');
+  btn.disabled = true;
+  const faces = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+  const el = document.getElementById('dice-result');
+  let n=0;
+  const iv = setInterval(()=>{
+    el.innerHTML=`<span class="rolling">${faces[Math.floor(Math.random()*6)]}</span>`;
+    n++;
+    if(n>9){
+      clearInterval(iv);
+      const val = Math.floor(Math.random()*6)+1;
+      el.innerHTML=`<span class="popped">${faces[val-1]}</span> <span style="font-size:15px;color:var(--muted)">${val}</span>`;
+      btn.disabled=false;
+      doMove(val);
+    }
+  },70);
+}
+
+const LAP_BONUS = 200;
+function doMove(steps){
+  const cp = players[currentPlayer];
+  const ai = availableItems();
+  if(!ai.length){advanceTurn();return;}
+  const newPos = cp.position + steps;
+  const lapped = newPos >= ai.length;
+  cp.position = newPos % ai.length;
+  if(lapped){
+    cp.wallet += LAP_BONUS;
+    log(`🔄 ${cp.name} lapped the board and passed START — +$${LAP_BONUS} bonus!`);
+  }
+  renderBoard();
+  renderPlayers();
+  const landed = ai[cp.position];
+  log(`🎲 ${cp.name} rolled → landed on "${landed.name}" ($${landed.price})`);
+
+  // scroll landed space into view
+  setTimeout(()=>{
+    document.getElementById(`space-${landed.id}`)?.scrollIntoView({behavior:'smooth',block:'center',inline:'center'});
+  },100);
+
+  setTimeout(()=>{
+    if(landed.ownerId===cp.id){ showOwnItemModal(landed); }
+    else { showPurchaseModal(landed); }
+  },500);
+}
+
+function buildMvRow(){
+  document.getElementById('mv-row').innerHTML=[1,2,3,4,5,6].map(n=>`<button class="mv-btn" onclick="doMove(${n})">${n}</button>`).join('');
+}
+
+function advanceTurn(){
+  currentPlayer=(currentPlayer+1)%players.length;
+  updateTurnBar();
+  renderPlayers();
+  renderBoard();
+  renderRightContent();
+}
+
+function updateTurnBar(){
+  const p=players[currentPlayer];
+  document.getElementById('turn-name').textContent=p.name;
+  document.getElementById('turn-dot').style.background=p.color;
+}
+
+// ── PURCHASE MODAL ───────────────────────────────────────
+function showPurchaseModal(item){
+  pendingItem=item;
+  const cp=players[currentPlayer], owner=players.find(p=>p.id===item.ownerId);
+  const avail=availableToSpend(cp), canAfford=avail>=item.price;
+  document.getElementById('pm-title').textContent=item.name;
+  document.getElementById('pm-sub').textContent=`${cp.name} landed on ${owner?.name}'s ${item.type}`;
+  document.getElementById('pm-body').innerHTML=`
+    <div class="purchase-item-display">
+      <div class="purchase-icon">${item.icon}</div>
+      <div class="purchase-info">
+        <div class="purchase-name">${item.name}</div>
+        <div class="purchase-owner">Owned by <b>${owner?.name}</b></div>
+        <div class="purchase-price">$${item.price}</div>
+      </div>
+    </div>
+    <div class="balance-grid">
+      <div class="balance-box"><div class="lbl">Your Wallet</div><div class="val" style="color:${cp.wallet>=0?'#15803d':'var(--red)'}">$${cp.wallet}</div></div>
+      <div class="balance-box"><div class="lbl">Available</div><div class="val" style="color:${canAfford?'var(--accent)':'var(--red)'}">$${avail}</div></div>
+      <div class="balance-box"><div class="lbl">Credit Used</div><div class="val" style="color:${cp.amountOwed>0?'var(--red)':'var(--muted)'}">$${cp.amountOwed}</div></div>
+      <div class="balance-box"><div class="lbl">Credit Left</div><div class="val">$${cp.creditLine-cp.amountOwed}</div></div>
+    </div>
+    ${!canAfford?`<div class="cant-afford">⛔ Need $${item.price}, available $${avail}</div>`:''}
+    ${item.type==='service'?`<div style="font-size:11px;padding:8px 10px;background:var(--purple-l);border-radius:6px;color:#7e22ce;font-weight:600;margin-top:6px;">⚡ Service — added to your Needs Met. ${owner?.name} keeps this skill.</div>`:''}
+  `;
+  const buyBtn=document.getElementById('pm-buy-btn');
+  buyBtn.style.display='';
+  buyBtn.disabled=!canAfford;
+  buyBtn.textContent=`Buy $${item.price}`;
+  openM('purchase-modal');
+}
+
+function showOwnItemModal(item){
+  pendingItem=null;
+  document.getElementById('pm-title').textContent=item.name;
+  document.getElementById('pm-sub').textContent='This is your own item';
+  document.getElementById('pm-body').innerHTML=`
+    <div class="purchase-item-display">
+      <div class="purchase-icon">${item.icon}</div>
+      <div class="purchase-info">
+        <div class="purchase-name">${item.name}</div>
+        <div class="purchase-owner">Your ${item.type} · $${item.price}</div>
+      </div>
+    </div>
+    <div style="padding:10px;background:var(--bg);border-radius:6px;font-size:12px;color:var(--muted);margin-top:8px;">You can't buy your own item. Pass to continue.</div>`;
+  document.getElementById('pm-buy-btn').style.display='none';
+  openM('purchase-modal');
+}
+
+function doPass(){
+  document.getElementById('pm-buy-btn').style.display='';
+  closeM('purchase-modal');
+  pendingItem=null;
+  advanceTurn();
+}
+
+function doBuy(){
+  if(!pendingItem) return;
+  const item=pendingItem, buyer=players[currentPlayer], seller=players.find(p=>p.id===item.ownerId), price=item.price;
+
+  // Buyer: pay from wallet first, borrow the rest from credit line
+  const fromWallet = Math.min(buyer.wallet, price);
+  buyer.wallet -= fromWallet;
+  buyer.amountOwed += (price - fromWallet);
+
+  // Seller: proceeds pay off debt first, remainder goes to wallet
+  if(seller.amountOwed > 0){
+    if(price >= seller.amountOwed){ seller.wallet += (price - seller.amountOwed); seller.amountOwed = 0; }
+    else { seller.amountOwed -= price; }
+  } else {
+    seller.wallet += price;
+  }
+
+  if(item.type==='good'){
+    seller.inventory=seller.inventory.filter(id=>id!==item.id);
+    buyer.inventory.push(item.id);
+    item.ownerId=buyer.id;
+    log(`📦 ${buyer.name} bought "${item.name}" from ${seller.name} for $${price}`);
+  } else {
+    buyer.needsMet.push(item.name);
+    buyer.needsMetScore = (buyer.needsMetScore||0) + item.price;
+    seller.servicesProvided=(seller.servicesProvided||0)+1;
+    log(`⚡ ${buyer.name} got "${item.name}" from ${seller.name} for $${price}`);
+  }
+  log(`   ${buyer.name}: wallet $${buyer.wallet}, owed $${buyer.amountOwed}`);
+
+  pendingItem=null;
+  document.getElementById('pm-buy-btn').style.display='';
+  closeM('purchase-modal');
+  renderPlayers();
+  renderBoard();
+  renderRightContent();
+  advanceTurn();
+}
+
+// ── PLAYER CARDS ─────────────────────────────────────────
+function renderPlayers(){
+  updateDebtChip();
+  const el=document.getElementById('players-list');
+  el.innerHTML=players.map((p,i)=>{
+    const avail=availableToSpend(p);
+    const ownedGoods=items.filter(it=>p.inventory.includes(it.id)&&it.type==='good'&&!it.sold);
+    const ownedSvcs=items.filter(it=>p.inventory.includes(it.id)&&it.type==='service');
+    return `
+      <div class="pcard ${i===currentPlayer?'active-p':''}">
+        <div class="pcard-head">
+          <div class="pdot" style="background:${p.color}"></div>
+          <span class="pname">${p.name}</span>
+          ${p.isBankManager?'<span class="bm-badge">🏦 BM</span>':''}
+          <span style="width:18px;height:18px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:white;">${p.token}</span>
+        </div>
+        <div class="pcard-body">
+          <div class="stat-row"><span class="stat-lbl">💵 Wallet</span><span class="stat-val ${p.wallet>=0?'green':'red'}">$${p.wallet}</span></div>
+          <div class="stat-row"><span class="stat-lbl">🏦 Owed</span><span class="stat-val ${p.amountOwed>0?'red':''}">$${p.amountOwed}</span></div>
+          <div class="stat-row"><span class="stat-lbl">💳 Credit</span><span class="stat-val">$${p.creditLine}</span></div>
+          <div class="stat-row" style="border-top:1px solid var(--border);padding-top:5px;margin-top:3px;">
+            <span class="stat-lbl">✅ Available</span><span class="stat-val accent">$${avail}</span>
+          </div>
+          <div class="mini-lbl">Inventory</div>
+          <div class="tag-row">
+            ${ownedGoods.map(it=>`<span class="tag good">${it.name}</span>`).join('')}
+            ${ownedSvcs.map(it=>`<span class="tag svc">${it.name}</span>`).join('')}
+            ${ownedGoods.length+ownedSvcs.length===0?'<span class="tag empty">Empty</span>':''}
+          </div>
+          ${p.needsMet.length?`
+          <div class="mini-lbl" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>Needs Met</span>
+            <span style="font-size:10px;font-weight:900;color:#15803d;background:var(--green-l);border:1px solid var(--green-b);padding:1px 7px;border-radius:20px;">⭐ ${p.needsMetScore} pts</span>
+          </div>
+          <div class="tag-row">${p.needsMet.map(n=>`<span class="tag met">${n}</span>`).join('')}</div>`:''}
+          <div class="cash-row">
+            <input class="cash-input" type="number" id="wi-${i}" value="${p.wallet}"/>
+            <button class="mini-btn b" onclick="setWallet(${i})">Set</button>
+            <button class="mini-btn g" onclick="adjWallet(${i},100)">+$</button>
+            <button class="mini-btn r" onclick="adjWallet(${i},-100)">−$</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function setWallet(i){ const v=parseInt(document.getElementById(`wi-${i}`).value)||0; players[i].wallet=Math.max(0,v); players[i].amountOwed=Math.max(0,-v); renderPlayers(); updateDebtChip(); }
+function adjWallet(i,d){
+  const p=players[i];
+  if(d>0){
+    // adding money: pay off debt first, then wallet
+    if(p.amountOwed>0){ const pay=Math.min(d,p.amountOwed); p.amountOwed-=pay; d-=pay; } p.wallet+=d;
+  } else {
+    // removing money: take from wallet first, rest becomes debt
+    const take=Math.min(p.wallet,Math.abs(d)); p.wallet-=take; p.amountOwed+=Math.abs(d)-take;
+  }
+  log(`${p.name}: manual adjust → wallet $${p.wallet}, owed $${p.amountOwed}`); renderPlayers();
+}
+
+// ── RIGHT PANEL ───────────────────────────────────────────
+function switchTab(el,tab){ document.querySelectorAll('.rtab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); currentTab=tab; renderRightContent(); }
+
+function renderRightContent(){
+  const el=document.getElementById('right-content');
+  if(currentTab==='dice'){
+    el.innerHTML=`<div class="sec-hdr">Turn Order</div>`
+      +players.map((p,i)=>`
+        <div style="display:flex;align-items:center;gap:6px;padding:5px 4px;border-radius:6px;${i===currentPlayer?'background:var(--accent-l);':''}">
+          <div style="width:8px;height:8px;border-radius:50%;background:${p.color};"></div>
+          <span style="font-size:11px;flex:1;font-weight:${i===currentPlayer?800:500};color:${i===currentPlayer?'var(--accent)':'var(--text)'};">${p.name}</span>
+          <span style="font-size:10px;font-weight:700;color:${availableToSpend(p)>0?'var(--accent)':'var(--red)'}">$${availableToSpend(p)}</span>
+        </div>`).join('')
+      +`<div class="sec-hdr" style="margin-top:12px;">Board</div>
+        <div style="font-size:11px;color:var(--muted);">${availableItems().length} spaces active</div>
+        <div style="font-size:11px;color:var(--muted);">${items.filter(i=>i.sold).length} goods sold</div>`;
+  } else if(currentTab==='bank'){
+    const bm=players.find(p=>p.isBankManager);
+    const totalOwed=players.reduce((s,p)=>s+p.amountOwed,0);
+    const maxCredit=Math.max(...players.map(p=>p.creditLine));
+
+    // Bank Manager section
+    let bmSection = '';
+    if(!bm){
+      bmSection = `
+        <div style="background:var(--yellow-l);border:1px solid var(--yellow-b);border-radius:8px;padding:12px;margin-bottom:10px;">
+          <div style="font-size:11px;font-weight:800;color:#854d0e;margin-bottom:6px;">🏦 No Bank Manager</div>
+          <div style="font-size:10px;color:#92400e;margin-bottom:8px;">Current player (<b>${players[currentPlayer]?.name}</b>) can take on this role.</div>
+          <button type="button" onclick="takeBankManagerRole()" style="width:100%;padding:7px;border-radius:6px;border:none;background:#d97706;color:white;font-size:11px;font-weight:800;cursor:pointer;">👑 Take Bank Manager Role</button>
+        </div>`;
+    } else {
+      bmSection = `
+        <div style="background:var(--yellow-l);border:1px solid var(--yellow-b);border-radius:8px;padding:12px;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+            <div style="width:10px;height:10px;border-radius:50%;background:${bm.color};"></div>
+            <span style="font-size:11px;font-weight:800;color:#854d0e;">👑 ${bm.name} · Bank Manager</span>
+          </div>
+          <div style="font-size:10px;color:#92400e;margin-bottom:8px;">Increase credit line for all players:</div>
+          <div style="display:flex;gap:6px;">
+            <button type="button" onclick="boostAllCredit(500)" style="flex:1;padding:8px 0;border-radius:6px;border:none;background:#16a34a;color:white;font-size:12px;font-weight:800;cursor:pointer;">+$500 All</button>
+            <button type="button" onclick="boostAllCredit(1000)" style="flex:1;padding:8px 0;border-radius:6px;border:none;background:#15803d;color:white;font-size:12px;font-weight:800;cursor:pointer;">+$1000 All</button>
+          </div>
+          <button type="button" onclick="resignBankManager()" style="width:100%;margin-top:7px;padding:5px;border-radius:6px;border:1px solid var(--yellow-b);background:white;color:#92400e;font-size:10px;font-weight:700;cursor:pointer;">Resign Role</button>
+        </div>`;
+    }
+
+    // Debt ledger bars
+    const ledger = players.map(p=>{
+      const pct = p.creditLine > 0 ? Math.min(100, (p.amountOwed/p.creditLine)*100) : 0;
+      const creditUsedPct = p.creditLine > 0 ? Math.min(100, ((p.creditLine - (p.creditLine - p.amountOwed))/p.creditLine)*100) : 0;
+      return `
+        <div style="margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+            <div style="display:flex;align-items:center;gap:5px;">
+              <div style="width:8px;height:8px;border-radius:50%;background:${p.color};"></div>
+              <span style="font-size:10px;font-weight:700;">${p.name}</span>
+            </div>
+            <span style="font-size:10px;font-weight:800;color:${p.amountOwed>0?'var(--red)':'var(--muted)'};">${p.amountOwed>0?`-$${p.amountOwed}`:'$0 owed'}</span>
+          </div>
+          <div style="height:10px;background:#f3f4f6;border-radius:20px;overflow:hidden;position:relative;">
+            <div style="height:100%;width:${pct}%;background:${pct>75?'var(--red)':pct>40?'#f97316':'var(--green)'};border-radius:20px;transition:width .4s;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:2px;">
+            <span style="font-size:8px;color:var(--muted);">Credit: $${p.creditLine}</span>
+            <span style="font-size:8px;color:var(--muted);">Used: ${Math.round(pct)}%</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    el.innerHTML = bmSection
+      + `<div class="sec-hdr">Debt Ledger</div>`
+      + ledger
+      + `<div class="sec-hdr" style="margin-top:4px;">Group Total Owed</div>
+         <div style="font-size:20px;font-weight:900;color:${totalOwed>0?'var(--red)':'var(--green)'};">$${totalOwed}</div>
+         <div style="font-size:9px;color:var(--muted);margin-top:2px;">across ${players.filter(p=>p.amountOwed>0).length} player(s) in debt</div>`;
+  } else {
+    el.innerHTML=`<div class="sec-hdr">Log</div>`
+      +(txLog.length?txLog.slice().reverse().map(t=>`<div class="tx-item">${t.desc}<div class="tx-time">${t.time}</div></div>`).join(''):'<div style="font-size:11px;color:var(--muted);">No transactions yet.</div>');
+  }
+}
+
+// ── BANK ─────────────────────────────────────────────────
+function takeBankManagerRole(){
+  players.forEach(p=>p.isBankManager=false);
+  const cp = players[currentPlayer];
+  cp.isBankManager=true;
+  log(`👑 ${cp.name} took on the Bank Manager role`);
+  renderPlayers(); renderRightContent();
+}
+
+function resignBankManager(){
+  const bm=players.find(p=>p.isBankManager);
+  if(bm){ bm.isBankManager=false; log(`🏦 ${bm.name} resigned as Bank Manager`); }
+  renderPlayers(); renderRightContent();
+}
+
+function boostAllCredit(amount){
+  const bm=players.find(p=>p.isBankManager);
+  players.forEach(p=>{ p.creditLine+=amount; });
+  log(`🏦 ${bm?.name} increased all credit lines by +$${amount}`);
+  renderPlayers(); renderRightContent();
+}
+
+function openCreditModal(pid){
+  const target=players.find(p=>p.id===pid);
+  creditAdjTarget=pid;
+  document.getElementById('cm-sub').textContent=`Adjusting credit for ${target.name} (current: $${target.creditLine})`;
+  document.getElementById('cm-input').value=target.creditLine;
+  openM('credit-modal');
+}
+function applyCredit(){
+  const val=parseInt(document.getElementById('cm-input').value)||0;
+  const target=players.find(p=>p.id===creditAdjTarget); if(!target) return;
+  const bm=players.find(p=>p.isBankManager);
+  const old=target.creditLine;
+  target.creditLine=Math.max(0,val);
+  log(`🏦 ${bm?.name} changed ${target.name}'s credit: $${old} → $${target.creditLine}`);
+  closeM('credit-modal'); renderPlayers(); renderRightContent();
+}
+
+// ── LEADERBOARD ───────────────────────────────────────────
+function showLeaderboard(){
+  const rows=players.map(p=>{
+    const iv=items.filter(it=>p.inventory.includes(it.id)&&!it.sold).reduce((s,it)=>s+it.price,0);
+    const net=p.wallet-p.amountOwed+iv+(p.needsMetScore||0);
+    return {p,net,iv};
+  }).sort((a,b)=>b.net-a.net);
+  document.getElementById('lb-body').innerHTML=rows.map((r,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:9px;background:var(--bg);border-radius:6px;margin-bottom:5px;">
+      <div style="font-size:17px;width:22px;">${['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣'][i]}</div>
+      <div style="width:9px;height:9px;border-radius:50%;background:${r.p.color};flex-shrink:0;"></div>
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:700;">${r.p.name}</div>
+        <div style="font-size:10px;color:var(--muted);">Wallet $${r.p.wallet} · Owed $${r.p.amountOwed} · Inv $${r.iv} · ⭐ ${r.p.needsMetScore||0} pts</div>
+      </div>
+      <div style="font-size:16px;font-weight:900;color:${r.net>=0?'var(--accent)':'var(--red)'};">$${r.net}</div>
+    </div>`).join('');
+  openM('lb-modal');
+}
+
+// ── UTILS ─────────────────────────────────────────────────
+function updateDebtChip(){
+  const total = players.reduce((s,p)=>s+p.amountOwed, 0);
+  const el = document.getElementById('debt-total');
+  if(el) el.textContent = `$${total}`;
+}
+function log(desc){ const t=new Date(); txLog.push({desc,time:t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}); if(currentTab==='log') renderRightContent(); updateDebtChip(); }
+function openM(id){ document.getElementById(id).classList.add('open'); }
+function closeM(id){ document.getElementById(id).classList.remove('open'); }
+function resetGame(){ if(confirm('Reset the game?')) location.reload(); }
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) closeM(o.id); }));
+
+initSetup();
+</script>
+</body>
+</html>
